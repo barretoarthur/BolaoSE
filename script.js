@@ -143,6 +143,7 @@ const ALL_MATCHES = [...generateGroupMatches(), ...generateKnockoutMatches()];
 let currentUser = null;   // { id, name, chapter, state }
 let currentTab = 'grupos';
 let cachedPalpites = {};  // cache local dos palpites do Firebase
+let participantType = 'demolay'; // 'demolay' ou 'externo'
 
 // ================================================================
 // SANITIZAÇÃO E VALIDAÇÃO
@@ -179,12 +180,42 @@ function switchLoginMode(mode) {
   }
 }
 
+// ---- Alternar tipo de participante no cadastro ----
+function switchParticipantType(type) {
+  participantType = type;
+  const toggleDemolay = document.getElementById('toggleDemolay');
+  const toggleExterno = document.getElementById('toggleExterno');
+  const labelRegId = document.getElementById('labelRegId');
+  const inputRegId = document.getElementById('inputRegId');
+  const hintRegId = document.getElementById('hintRegId');
+  const chapterDemolay = document.getElementById('regChapterDemolay');
+  const chapterExterno = document.getElementById('regChapterExterno');
+
+  if (type === 'demolay') {
+    toggleDemolay.classList.add('active');
+    toggleExterno.classList.remove('active');
+    labelRegId.textContent = 'Seu ID DeMolay';
+    inputRegId.placeholder = 'Digite seu ID DeMolay';
+    hintRegId.textContent = 'Use o ID que voc\u00ea j\u00e1 possui como DeMolay';
+    chapterDemolay.classList.remove('hidden');
+    chapterExterno.classList.add('hidden');
+  } else {
+    toggleDemolay.classList.remove('active');
+    toggleExterno.classList.add('active');
+    labelRegId.textContent = 'Crie seu Usu\u00e1rio';
+    inputRegId.placeholder = 'Escolha um nome de usu\u00e1rio';
+    hintRegId.textContent = 'Escolha um nome de usu\u00e1rio para acessar o bol\u00e3o (4-20 caracteres)';
+    chapterDemolay.classList.add('hidden');
+    chapterExterno.classList.remove('hidden');
+  }
+}
+
 async function handleLogin() {
   const idRaw = document.getElementById('inputLoginId').value.trim();
   const id = sanitize(idRaw).toLowerCase();
 
-  if (!id) { showToast('⚠️ Digite seu ID!', true); return; }
-  if (!validateId(id)) { showToast('⚠️ ID inválido! Use 4-20 caracteres (letras, números, _ ou -)', true); return; }
+  if (!id) { showToast('⚠️ Digite seu ID ou usuário!', true); return; }
+  if (!validateId(id)) { showToast('⚠️ ID/Usuário inválido! Use 4-20 caracteres (letras, números, _ ou -)', true); return; }
 
   const btn = document.getElementById('btnLogin');
   btn.disabled = true;
@@ -193,7 +224,7 @@ async function handleLogin() {
   try {
     const snap = await db.ref(`bolao2026/users/${id}`).once('value');
     if (!snap.exists()) {
-      showToast('⚠️ ID não encontrado. Cadastre-se primeiro!', true);
+      showToast('⚠️ ID/Usuário não encontrado. Cadastre-se primeiro!', true);
       btn.disabled = false;
       btn.textContent = 'Entrar';
       return;
@@ -215,14 +246,17 @@ async function handleRegister() {
   const idRaw = document.getElementById('inputRegId').value.trim();
   const id = sanitize(idRaw).toLowerCase();
   const name = sanitize(document.getElementById('inputRegName').value.trim());
-  const chapter = sanitize(document.getElementById('inputRegChapter').value.trim());
+  const chapterSelect = participantType === 'demolay'
+    ? document.getElementById('inputRegChapterDemolay')
+    : document.getElementById('inputRegChapterExterno');
+  const chapter = sanitize(chapterSelect.value.trim());
   const state = document.getElementById('inputRegState').value;
 
   if (!id || !name || !chapter || !state) {
     showToast('⚠️ Preencha todos os campos!', true); return;
   }
   if (!validateId(id)) {
-    showToast('⚠️ ID inválido! Use 4-20 caracteres (letras, números, _ ou -)', true); return;
+    showToast('⚠️ ID/Usuário inválido! Use 4-20 caracteres (letras, números, _ ou -)', true); return;
   }
 
   const btn = document.getElementById('btnRegister');
@@ -232,7 +266,7 @@ async function handleRegister() {
   try {
     const snap = await db.ref(`bolao2026/users/${id}`).once('value');
     if (snap.exists()) {
-      showToast('⚠️ Este ID já está em uso! Escolha outro.', true);
+      showToast('⚠️ Este ID/usuário já está em uso! Escolha outro.', true);
       btn.disabled = false;
       btn.textContent = 'Cadastrar';
       return;

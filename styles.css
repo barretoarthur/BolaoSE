@@ -296,6 +296,40 @@ body::before {
   font-style: italic;
 }
 
+/* ---- Toggle tipo participante ---- */
+.participant-toggle {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 12px 14px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.toggle-btn:hover {
+  border-color: var(--accent-gold);
+  color: var(--text-primary);
+}
+
+.toggle-btn.active {
+  background: rgba(212, 160, 23, 0.12);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold-light);
+  box-shadow: 0 0 12px rgba(212, 160, 23, 0.1);
+}
+
 .btn-primary {
   width: 100%;
   padding: 15px;

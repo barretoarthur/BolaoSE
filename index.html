@@ -35,30 +35,55 @@
       <!-- MODO LOGIN -->
       <div id="loginMode">
         <div class="form-group">
-          <label for="inputLoginId">Seu ID</label>
-          <input type="text" id="inputLoginId" placeholder="Digite seu ID de participante" autocomplete="username">
+          <label for="inputLoginId">ID DeMolay ou Usuário</label>
+          <input type="text" id="inputLoginId" placeholder="Digite seu ID DeMolay ou usuário" autocomplete="username">
+          <span class="field-hint">Use seu ID DeMolay ou o usuário que você criou no cadastro</span>
         </div>
         <button class="btn-primary" id="btnLogin" onclick="handleLogin()">
           Entrar
         </button>
-        <p class="login-hint">Ainda não tem ID? <a href="#" onclick="switchLoginMode('register'); return false;">Cadastre-se</a></p>
+        <p class="login-hint">Ainda não tem cadastro? <a href="#" onclick="switchLoginMode('register'); return false;">Cadastre-se</a></p>
       </div>
 
       <!-- MODO CADASTRO -->
       <div id="registerMode" class="hidden">
+        <!-- Seletor de tipo de participante -->
         <div class="form-group">
-          <label for="inputRegId">Digite seu ID</label>
-          <input type="text" id="inputRegId" placeholder="Seu ID DeMolay" autocomplete="off">
-          <span class="field-hint">Use o ID que você já possui como DeMolay</span>
+          <label>Você é DeMolay?</label>
+          <div class="participant-toggle">
+            <button type="button" class="toggle-btn active" id="toggleDemolay" onclick="switchParticipantType('demolay')">✅ Sim, sou DeMolay</button>
+            <button type="button" class="toggle-btn" id="toggleExterno" onclick="switchParticipantType('externo')">👤 Não, sou de fora</button>
+          </div>
         </div>
+
+        <!-- Campo ID/Usuário (muda conforme o tipo) -->
+        <div class="form-group" id="regIdGroup">
+          <label for="inputRegId" id="labelRegId">Seu ID DeMolay</label>
+          <input type="text" id="inputRegId" placeholder="Digite seu ID DeMolay" autocomplete="off">
+          <span class="field-hint" id="hintRegId">Use o ID que você já possui como DeMolay</span>
+        </div>
+
         <div class="form-group">
           <label for="inputRegName">Nome Completo</label>
           <input type="text" id="inputRegName" placeholder="Digite seu nome completo" autocomplete="name">
         </div>
-        <div class="form-group">
-          <label for="inputRegChapter">Capítulo</label>
-          <input type="text" id="inputRegChapter" placeholder="Nome do seu capítulo" autocomplete="organization">
+
+        <!-- Capítulo para DeMolay -->
+        <div class="form-group" id="regChapterDemolay">
+          <label for="inputRegChapterDemolay">Capítulo</label>
+          <input type="text" id="inputRegChapterDemolay" placeholder="Digite o nome do seu capítulo" autocomplete="organization">
         </div>
+
+        <!-- Vínculo para externo -->
+        <div class="form-group hidden" id="regChapterExterno">
+          <label for="inputRegChapterExterno">Vínculo</label>
+          <select id="inputRegChapterExterno">
+            <option value="">Selecione seu vínculo</option>
+            <option value="Maçom">Maçom</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+
         <div class="form-group">
           <label for="inputRegState">Estado</label>
           <select id="inputRegState">
@@ -95,7 +120,7 @@
         <button class="btn-primary" id="btnRegister" onclick="handleRegister()">
           Cadastrar
         </button>
-        <p class="login-hint">Já tem um ID? <a href="#" onclick="switchLoginMode('login'); return false;">Entrar</a></p>
+        <p class="login-hint">Já tem cadastro? <a href="#" onclick="switchLoginMode('login'); return false;">Entrar</a></p>
       </div>
     </div>
   </div>
