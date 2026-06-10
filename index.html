@@ -150,18 +150,33 @@
     <!-- Abas de navegação -->
     <nav class="nav-tabs" id="navTabs">
       <button class="nav-tab active" data-tab="grupos" onclick="switchTab('grupos')">⚽ Fase de Grupos</button>
+      <button class="nav-tab" data-tab="16avos" onclick="switchTab('16avos')">⚔️ 16 Avos</button>
       <button class="nav-tab" data-tab="oitavas" onclick="switchTab('oitavas')">🏆 Oitavas</button>
       <button class="nav-tab" data-tab="quartas" onclick="switchTab('quartas')">🥇 Quartas</button>
       <button class="nav-tab" data-tab="semis" onclick="switchTab('semis')">🔥 Semifinais</button>
       <button class="nav-tab" data-tab="final" onclick="switchTab('final')">👑 Final</button>
       <button class="nav-tab" data-tab="campeao" onclick="switchTab('campeao')">🏆 Campeão</button>
       <button class="nav-tab" data-tab="ranking" onclick="switchTab('ranking')">📊 Ranking</button>
+      <button class="nav-tab nav-tab-admin hidden" data-tab="admin" id="adminTab" onclick="switchTab('admin')">🔧 Admin</button>
     </nav>
 
     <!-- Conteúdo principal -->
     <main class="main-content" id="mainContent">
       <!-- Conteúdo dinâmico será inserido pelo JavaScript -->
     </main>
+  </div>
+
+  <!-- Modal de confirmação -->
+  <div class="modal-overlay hidden" id="confirmModal">
+    <div class="modal-box">
+      <div class="modal-icon" id="confirmModalIcon">⚠️</div>
+      <h3 id="confirmModalTitle">Confirmar ação</h3>
+      <p id="confirmModalMsg">Tem certeza?</p>
+      <div class="modal-actions">
+        <button class="btn-modal btn-modal-cancel" onclick="closeConfirmModal()">Cancelar</button>
+        <button class="btn-modal btn-modal-confirm" id="confirmModalBtn" onclick="">Confirmar</button>
+      </div>
+    </div>
   </div>
 
   <!-- Toast de notificação -->
