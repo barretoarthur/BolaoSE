@@ -157,6 +157,7 @@ let adminResultsCache = {}; // cache dos resultados oficiais
 let adminSearchQuery = ''; // filtro de busca de usuários
 let matchupsCache = {};   // confrontos configurados (para fases eliminatórias)
 let adminConfrontosPhase = '16avos'; // fase selecionada na config de confrontos
+let lockedMatchesCache = {}; // jogos com palpites bloqueados
 
 // ================================================================
 // SANITIZAÇÃO E VALIDAÇÃO
@@ -248,6 +249,7 @@ async function handleLogin() {
     localStorage.setItem('bolao_userId', id);
     await loadPalpites();
     await loadMatchups();
+    await loadLockedMatches();
     if (isAdmin) await loadAdminResults();
     showMainScreen();
   } catch (err) {
@@ -298,6 +300,7 @@ async function handleRegister() {
     localStorage.setItem('bolao_userId', id);
     cachedPalpites = {};
     await loadMatchups();
+    await loadLockedMatches();
     showToast('✅ Cadastro realizado com sucesso!');
     showMainScreen();
   } catch (err) {
@@ -315,6 +318,7 @@ function handleLogout() {
   adminResultsCache = {};
   adminSearchQuery = '';
   matchupsCache = {};
+  lockedMatchesCache = {};
   localStorage.removeItem('bolao_userId');
   document.getElementById('mainScreen').style.display = 'none';
   document.getElementById('adminTab').classList.add('hidden');
@@ -349,6 +353,7 @@ async function checkSession() {
         isAdmin = (savedId === ADMIN_ID);
         await loadPalpites();
         await loadMatchups();
+        await loadLockedMatches();
         if (isAdmin) await loadAdminResults();
         showMainScreen();
         return;
@@ -454,18 +459,43 @@ async function loadMatchups() {
   }
 }
 
+// Carregar jogos bloqueados do Firebase
+async function loadLockedMatches() {
+  try {
+    const snap = await db.ref('bolao2026/lockedMatches').once('value');
+    lockedMatchesCache = snap.val() || {};
+  } catch (err) {
+    console.error('Erro ao carregar jogos bloqueados:', err);
+    lockedMatchesCache = {};
+  }
+}
+
 function renderMatchCard(match) {
   const { team1, team2 } = getMatchTeams(match);
   const saved = cachedPalpites[match.id];
   const score1 = saved ? saved.score1 : '';
   const score2 = saved ? saved.score2 : '';
   const savedClass = saved ? 'saved' : '';
-  const btnText = saved ? '✅ Palpite Salvo — Clique para Atualizar' : '💾 Salvar Palpite';
+  const isLocked = !!lockedMatchesCache[match.id];
+  const lockedClass = isLocked ? 'locked' : '';
   const flag1 = getFlag(team1);
   const flag2 = getFlag(team2);
 
+  let btnText, btnDisabled;
+  if (isLocked) {
+    btnText = '🔒 Palpites Bloqueados';
+    btnDisabled = 'disabled';
+  } else if (saved) {
+    btnText = '✅ Palpite Salvo — Clique para Atualizar';
+    btnDisabled = '';
+  } else {
+    btnText = '💾 Salvar Palpite';
+    btnDisabled = '';
+  }
+
   return `
-    <div class="match-card ${savedClass}" id="card-${match.id}">
+    <div class="match-card ${savedClass} ${lockedClass}" id="card-${match.id}">
+      ${isLocked ? '<div class="match-locked-banner">🔒 Palpites bloqueados para este jogo</div>' : ''}
       <div class="match-teams">
         <div class="team">
           <div class="team-flag">${flag1}</div>
@@ -473,17 +503,17 @@ function renderMatchCard(match) {
         </div>
         <div class="score-input-group">
           <input type="number" class="score-input" id="s1-${match.id}" min="0" max="20"
-                 value="${score1}" placeholder="-" aria-label="Gols ${team1}">
+                 value="${score1}" placeholder="-" aria-label="Gols ${team1}" ${isLocked ? 'disabled' : ''}>
           <span class="score-x">✕</span>
           <input type="number" class="score-input" id="s2-${match.id}" min="0" max="20"
-                 value="${score2}" placeholder="-" aria-label="Gols ${team2}">
+                 value="${score2}" placeholder="-" aria-label="Gols ${team2}" ${isLocked ? 'disabled' : ''}>
         </div>
         <div class="team">
           <div class="team-flag">${flag2}</div>
           <span class="team-name">${team2}</span>
         </div>
       </div>
-      <button class="btn-save-match ${savedClass}" onclick="savePalpite('${match.id}')">
+      <button class="btn-save-match ${savedClass} ${lockedClass}" onclick="savePalpite('${match.id}')" ${btnDisabled}>
         ${btnText}
       </button>
     </div>`;
@@ -503,6 +533,12 @@ async function loadPalpites() {
 }
 
 async function savePalpite(matchId) {
+  // Verificar se o jogo está bloqueado
+  if (lockedMatchesCache[matchId]) {
+    showToast('🔒 Palpites bloqueados para este jogo!', true);
+    return;
+  }
+
   const s1El = document.getElementById(`s1-${matchId}`);
   const s2El = document.getElementById(`s2-${matchId}`);
   const s1 = s1El.value;
@@ -1017,12 +1053,18 @@ function renderAdminMatchCard(match) {
   const score2 = result ? result.score2 : '';
   const hasResult = result !== undefined && result !== null;
   const savedClass = hasResult ? 'saved' : '';
+  const isLocked = !!lockedMatchesCache[match.id];
   const flag1 = getFlag(team1);
   const flag2 = getFlag(team2);
 
   return `
     <div class="match-card admin-match-card ${savedClass}" id="admin-card-${match.id}">
-      ${hasResult ? '<div class="admin-result-badge">✅ Resultado Oficial</div>' : '<div class="admin-result-badge pending">⏳ Sem Resultado</div>'}
+      <div class="admin-card-top-badges">
+        ${hasResult ? '<div class="admin-result-badge">✅ Resultado Oficial</div>' : '<div class="admin-result-badge pending">⏳ Sem Resultado</div>'}
+        <div class="admin-lock-badge ${isLocked ? 'locked' : 'unlocked'}">
+          ${isLocked ? '🔒 Bloqueado' : '🔓 Aberto'}
+        </div>
+      </div>
       <div class="match-teams">
         <div class="team">
           <div class="team-flag">${flag1}</div>
@@ -1043,6 +1085,9 @@ function renderAdminMatchCard(match) {
       <div class="admin-match-actions">
         <button class="btn-admin-save" onclick="adminSaveResult('${match.id}')">
           💾 Salvar Resultado
+        </button>
+        <button class="btn-admin-lock ${isLocked ? 'is-locked' : ''}" onclick="toggleLockMatch('${match.id}')">
+          ${isLocked ? '🔓 Desbloquear Palpites' : '🔒 Bloquear Palpites'}
         </button>
         ${hasResult ? `<button class="btn-admin-clear" onclick="confirmClearResult('${match.id}', '${team1.replace(/'/g, "\\'")}',' ${team2.replace(/'/g, "\\'")}')">🗑️ Limpar</button>` : ''}
       </div>
@@ -1116,6 +1161,33 @@ async function adminClearResult(matchId) {
   } catch (err) {
     console.error('Erro ao limpar resultado:', err);
     showToast('❌ Erro ao limpar resultado.', true);
+  }
+}
+
+// ---- BLOQUEAR / DESBLOQUEAR PALPITES ----
+async function toggleLockMatch(matchId) {
+  const isCurrentlyLocked = !!lockedMatchesCache[matchId];
+
+  try {
+    if (isCurrentlyLocked) {
+      // Desbloquear
+      await db.ref(`bolao2026/lockedMatches/${matchId}`).remove();
+      delete lockedMatchesCache[matchId];
+      showToast('🔓 Palpites desbloqueados para este jogo!');
+    } else {
+      // Bloquear
+      await db.ref(`bolao2026/lockedMatches/${matchId}`).set({
+        lockedAt: new Date().toISOString(),
+        lockedBy: currentUser.id
+      });
+      lockedMatchesCache[matchId] = { lockedAt: new Date().toISOString(), lockedBy: currentUser.id };
+      showToast('🔒 Palpites bloqueados para este jogo!');
+    }
+    // Re-renderizar o painel admin
+    renderContent();
+  } catch (err) {
+    console.error('Erro ao bloquear/desbloquear jogo:', err);
+    showToast('❌ Erro ao alterar bloqueio. Verifique as regras do Firebase.', true);
   }
 }
 
